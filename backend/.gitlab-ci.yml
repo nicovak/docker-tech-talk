@@ -1,0 +1,67 @@
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  POSTGRES_DB: "docker_rails_test"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "example"
+  PGDATA: "/var/lib/postgresql/data"
+  POSTGRES_INITDB_ARGS: "--encoding=UTF8 --data-checksums"
+
+.default-cache: &default-cache
+  cache:
+    untracked: true
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+      - vendor/
+      - public/
+
+integration-test:
+  <<: *default-cache
+  image: ruby:2.7
+  stage: test
+  variables:
+    RAILS_ENV: test
+    DATABASE_HOST: postgres
+    DATABASE_NAME: docker_rails
+    DATABASE_USER: $POSTGRES_USER
+    DATABASE_PASSWORD: $POSTGRES_PASSWORD
+  services:
+    - postgres:latest
+    - redis:latest
+  before_script:
+    - ruby -v
+    - curl -sL https://deb.nodesource.com/setup_12.x | bash -
+    - apt-get install -y nodejs
+    - npm install -g yarn
+    - yarn install
+    - bundle config set path 'vendor/ruby'
+    - bundle install -j $(nproc)
+    - bundle exec rails db:prepare
+    - bundle exec rails assets:precompile
+  script:
+    - bundle exec rspec
+  only:
+    - master
+
+docker-build:
+  <<: *default-cache
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - echo $CI_BUILD_TOKEN | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/$CI_PROJECT_NAME" -f Dockerfile.dev .
+    - docker push "$CI_REGISTRY_IMAGE/$CI_PROJECT_NAME"
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/$CI_PROJECT_NAME-worker" -f Dockerfile.dev .
+    - docker push "$CI_REGISTRY_IMAGE/$CI_PROJECT_NAME-worker"
+  only:
+    - master

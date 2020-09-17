@@ -1,0 +1,28 @@
+body,
+html {
+  background: #0f1234;
+}
+
+.content {
+  background: #0f1234;
+  position: relative;
+
+  .icon {
+    display: block;
+    font-size: 3em;
+  }
+
+  .app-content {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 150px;
+    margin-top: 50px;
+    border-radius: 25px;
+    font-size: 2em;
+    text-align: center;
+  }
+
+  .data {
+    display: block;
+    margin-top: 25px;
+  }
+}

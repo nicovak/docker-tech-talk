@@ -1,0 +1,52 @@
+version: "3"
+services:
+  server: &server
+    tty: true
+    stdin_open: true
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    depends_on:
+      - database
+      - redis
+    image: nicovak/docker-react-rails-backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/tmp
+    ports:
+      - "3200:3200"
+    env_file: ./backend/.env
+    environment:
+      RAILS_ENV: development
+    command: bundle exec puma -C config/puma.rb
+  worker:
+    <<: *server
+    ports: []
+    command: bundle exec sidekiq -C config/sidekiq.yml
+  database:
+    image: postgres:12.3-alpine
+    ports:
+      - "5454:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: docker_react_rails
+  redis:
+    image: redis:6.0.5-alpine
+    volumes:
+      - redis_data:/data
+  client:
+    stdin_open: true
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    image: nicovak/docker-react-rails-frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+volumes:
+  postgres_data:
+  redis_data:
