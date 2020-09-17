@@ -5,18 +5,10 @@ html {
   background: #0f1234;
 }
 
-.wrapper {
-  width: 100vw;
-  height: 100vh;
-  display: block;
-  background: #0f1234;
-  position: relative;
-
-  .content {
-    background: rgba(255, 255, 255, 0.8);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
+.content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 8em;
 }
